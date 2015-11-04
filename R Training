@@ -1,0 +1,101 @@
+
+### AGPC Claims Analytics training - Pre-work
+### Fabien Millet - November 2015
+
+### Chapter 6 of R for beginners
+
+Lib <- "Y:/Work/R/win-library/3.2"
+library("stringr", lib.loc=Lib)
+library("sqldf", lib.loc=Lib)
+library("date", lib.loc=Lib)
+library("ggplot2", lib.loc=Lib)
+
+TrainingDir <- "Y:/Work/Training/R/R for beginners"
+setwd(TrainingDir)
+
+
+### Exercice 1
+
+Temper <- read.csv(file= paste(TrainingDir, "/RBook/Temperature.csv", sep=""),
+                          header= TRUE)
+
+# fMonthStr <- function(Year, Month) {
+#   if(Month > 9) {return(paste(as.character(Year), "-", as.character(Month), sep = ""))
+#   } else return(paste(as.character(Year), "-0", Month, sep=""))
+# }
+# 
+# Temper$MonthStr <- mapply(Temper$Year, Temper$Month, FUN = fMonthStr)
+
+# cleaner
+Temper$MonthStr <- ifelse(Temper$Month > 9,  paste(as.character(Temper$Year), "-", as.character(Temper$Month), sep = ""),
+                           paste(as.character(Temper$Year), "-0", Temper$Month, sep="") )
+
+Temper$Date2 <- as.Date(Temper$DateNr, "%d / %m / %Y")
+
+
+#Temp_Mean <- tapply(Temper$Temperature, Temper$MonthStr, FUN= mean, na.rm = TRUE)
+
+# Base R plot
+for(i in 1:length(unique(Temper$Station))) {
+  jpeg(file = paste(TrainingDir, "/Graph/", unique(Temper$Station)[i], ".jpg", sep = ""))
+    plot(x = Temper$Date2[Temper$Station == unique(Temper$Station)[i]],
+       y = Temper$Temperature[Temper$Station == unique(Temper$Station)[i]],
+       main = unique(Temper$Station)[i],
+       xlab = "Date", 
+       ylab = "Temperature")
+  dev.off()
+}
+
+
+rm(Temper)
+
+
+
+### Exercice 2
+
+Owls <- read.table(file= paste(TrainingDir, "/RBook/Owls.txt", sep=""), header= TRUE)
+
+# Owls$Night <- paste(Owls$Nest, Owls$FoodTreatment, sep = "-")
+
+Owls$Night <- ifelse(Owls$FoodTreatment == "Satiated", paste(Owls$Nest, "Satiated", sep = "-"),
+                     paste(Owls$Nest, "Deprived", sep = "-"))
+
+# Base R plot
+for(i in 1:length(unique(Owls$Night))) {
+  jpeg(file = paste(TrainingDir, "/Graph/", unique(Owls$Night)[i], ".jpg", sep = ""))
+  plot(x = Owls$ArrivalTime[Owls$Night == unique(Owls$Night)[i]],
+       y = Owls$SiblingNegotiation[Owls$Night == unique(Owls$Night)[i]],
+       main = unique(Owls$Night)[i],
+       xlab = "Arrival time", 
+       ylab = "Sibling negotiation")
+  dev.off()
+}
+
+
+# With ggplot - Need to use print() in order to display results, otherwise jpeg blank
+for(i in 1:length(unique(Owls$Night))) {
+  jpeg(file = paste(TrainingDir, "/Graph/", unique(Owls$Night)[i], ".jpg", sep = "") )
+  print(ggplot(Owls[Owls$Night == unique(Owls$Night)[i],], 
+               aes(Owls$ArrivalTime[Owls$Night == unique(Owls$Night)[i]], 
+                   Owls$SiblingNegotiation[Owls$Night == unique(Owls$Night)[i]])) +
+      geom_point(size = 2) +
+      labs(title = unique(Owls$Night)[i],
+           x = "Arrival time",
+           y = "Sibling negotiation"))
+  dev.off()
+}
+
+# With ggplot - ggsave to avoid display in R
+for(i in 1:length(unique(Owls$Night))) {
+  p <- ggplot(Owls[Owls$Night == unique(Owls$Night)[i],], 
+              aes(Owls$ArrivalTime[Owls$Night == unique(Owls$Night)[i]], 
+                  Owls$SiblingNegotiation[Owls$Night == unique(Owls$Night)[i]])) +
+    geom_point(size = 2) +
+    labs(title = unique(Owls$Night)[i],
+         x = "Arrival time",
+         y = "Sibling negotiation")
+  ggsave(p, filename = paste(TrainingDir, "/Graph/", unique(Owls$Night)[i], ".jpg", sep = ""))
+}
+
+
+rm(Owls)
